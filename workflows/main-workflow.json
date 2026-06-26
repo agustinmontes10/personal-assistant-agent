@@ -1,0 +1,200 @@
+{
+  "name": "Personal Assistant - Main",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "name": "Chat Trigger",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 300],
+      "webhookId": "personal-assistant-main"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0002-0002-0002-000000000002",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [220, 540],
+      "credentials": {
+        "openAiApi": {
+          "id": "PLACEHOLDER",
+          "name": "OpenAi Model - Aesthetic"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "fromInput",
+        "sessionKey": "={{ $('Chat Trigger').item.json.sessionId }}",
+        "contextWindowLength": 20
+      },
+      "id": "a1b2c3d4-0003-0003-0003-000000000003",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [440, 540]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "systemMessage": "Sos un asistente personal de gastos. Respondé siempre en español, de forma clara y concisa.\n\nEl número de teléfono del usuario actual es +5491112345678.\nSiempre pasá este valor exacto como phone_number cuando llames a cualquier tool.\n\nCategorías válidas: Comida, Transporte, Servicios, Salud, Entretenimiento, Ropa, Tecnología, Otros.\n\nReglas estrictas:\n1. En el primer mensaje de cada sesión, llamá a verificar_o_registrar_usuario para confirmar si el usuario existe.\n2. Si el usuario no está registrado, pedile nombre y apellido antes de continuar, luego registralo con esos datos.\n3. Cuando el usuario mencione un gasto, extraé monto, categoría y descripción del mensaje. Si falta algún dato, pedilo antes de continuar.\n4. Siempre mostrá un resumen del gasto y esperá confirmación explícita del usuario (sí/no) antes de llamar a registrar_gasto.\n5. Nunca uses categorías fuera de la lista. Si la categoría no está clara, preguntá al usuario.\n6. Para ver gastos recientes usá listar_gastos. Para resúmenes por período usá resumen_periodo con 'hoy', 'semana' o 'mes'.",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0004-0004-0004-000000000004",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "name": "verificar_o_registrar_usuario",
+        "description": "Verifica si el usuario existe en la base de datos usando su phone_number. Si no existe, lo registra con nombre y apellido. Llamar siempre en el primer mensaje de la sesión.",
+        "workflowId": {
+          "__rl": true,
+          "value": "",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone_number": "={{ $fromAI('phone_number', 'Número de teléfono del usuario', 'string') }}",
+            "nombre": "={{ $fromAI('nombre', 'Nombre del usuario. Requerido solo si el usuario no existe aún.', 'string') }}",
+            "apellido": "={{ $fromAI('apellido', 'Apellido del usuario. Requerido solo si el usuario no existe aún.', 'string') }}"
+          }
+        }
+      },
+      "id": "a1b2c3d4-0005-0005-0005-000000000005",
+      "name": "Tool: Verificar Usuario",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [700, 140]
+    },
+    {
+      "parameters": {
+        "name": "registrar_gasto",
+        "description": "Guarda un gasto en la base de datos. Llamar SOLO después de que el usuario confirmó explícitamente con 'sí'. Nunca llamar sin confirmación previa del usuario.",
+        "workflowId": {
+          "__rl": true,
+          "value": "",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone_number": "={{ $fromAI('phone_number', 'Número de teléfono del usuario', 'string') }}",
+            "monto": "={{ $fromAI('monto', 'Monto del gasto en pesos argentinos', 'number') }}",
+            "categoria": "={{ $fromAI('categoria', 'Categoría del gasto. Valores válidos: Comida, Transporte, Servicios, Salud, Entretenimiento, Ropa, Tecnología, Otros', 'string') }}",
+            "descripcion": "={{ $fromAI('descripcion', 'Descripción breve del gasto extraída del mensaje del usuario', 'string') }}"
+          }
+        }
+      },
+      "id": "a1b2c3d4-0006-0006-0006-000000000006",
+      "name": "Tool: Registrar Gasto",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "name": "listar_gastos",
+        "description": "Lista los últimos N gastos del usuario con subtotal por categoría. Usar cuando el usuario quiera ver sus gastos recientes.",
+        "workflowId": {
+          "__rl": true,
+          "value": "",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone_number": "={{ $fromAI('phone_number', 'Número de teléfono del usuario', 'string') }}",
+            "cantidad": "={{ $fromAI('cantidad', 'Cantidad de gastos a listar. Usar 5 si el usuario no especifica un número.', 'number') }}"
+          }
+        }
+      },
+      "id": "a1b2c3d4-0007-0007-0007-000000000007",
+      "name": "Tool: Listar Gastos",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [700, 460]
+    },
+    {
+      "parameters": {
+        "name": "resumen_periodo",
+        "description": "Muestra el total gastado y el desglose por categoría para un período. Usar cuando el usuario pregunte cuánto gastó hoy, esta semana o este mes.",
+        "workflowId": {
+          "__rl": true,
+          "value": "",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone_number": "={{ $fromAI('phone_number', 'Número de teléfono del usuario', 'string') }}",
+            "periodo": "={{ $fromAI('periodo', 'Período a consultar. Valores válidos: hoy, semana, mes', 'string') }}"
+          }
+        }
+      },
+      "id": "a1b2c3d4-0008-0008-0008-000000000008",
+      "name": "Tool: Resumen Período",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [700, 620]
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [{ "node": "AI Agent", "type": "main", "index": 0 }]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [{ "node": "AI Agent", "type": "ai_memory", "index": 0 }]
+      ]
+    },
+    "Tool: Verificar Usuario": {
+      "ai_tool": [
+        [{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]
+      ]
+    },
+    "Tool: Registrar Gasto": {
+      "ai_tool": [
+        [{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]
+      ]
+    },
+    "Tool: Listar Gastos": {
+      "ai_tool": [
+        [{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]
+      ]
+    },
+    "Tool: Resumen Período": {
+      "ai_tool": [
+        [{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {}
+}
