@@ -10,11 +10,11 @@
 - [ ] Reemplazar número de teléfono hardcodeado en el system prompt
 
 ### Base de datos (Supabase)
-- [ ] Crear tabla `usuarios`
-- [ ] Crear tabla `gastos`
+- [ ] Crear tabla `usuarios`  ← correr `sql/schema.sql` en Supabase → SQL Editor
+- [ ] Crear tabla `gastos`    ← ídem (mismo archivo)
 
 ### Sub-workflows (tools)
-- [ ] `verificar_o_registrar_usuario` — SELECT + INSERT en tabla usuarios
+- [ ] `verificar_o_registrar_usuario` — importar `workflows/sub-verificar-usuario.json`, linkear credencial Postgres, linkear en main workflow
 - [ ] `registrar_gasto` — INSERT en tabla gastos
 - [ ] `listar_gastos` — SELECT últimos N gastos con subtotal por categoría
 - [ ] `resumen_periodo` — totales por hoy / semana / mes
