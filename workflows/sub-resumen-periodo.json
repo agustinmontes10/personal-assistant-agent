@@ -1,0 +1,100 @@
+{
+  "name": "Sub: Resumen Periodo",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSchema": {
+          "fields": {
+            "values": [
+              {
+                "id": "field-001",
+                "fieldName": "phone_number",
+                "fieldType": "string"
+              },
+              {
+                "id": "field-002",
+                "fieldName": "periodo",
+                "fieldType": "string"
+              }
+            ]
+          }
+        }
+      },
+      "id": "sub4-0001-0001-0001-000000000001",
+      "name": "Execute Sub-workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT categoria, SUM(monto) AS total FROM gastos WHERE phone_number = '{{ $json.phone_number }}' AND ( ('{{ $json.periodo }}' = 'hoy' AND fecha::date = CURRENT_DATE) OR ('{{ $json.periodo }}' = 'semana' AND fecha >= NOW() - INTERVAL '7 days') OR ('{{ $json.periodo }}' = 'mes' AND DATE_TRUNC('month', fecha) = DATE_TRUNC('month', NOW())) ) GROUP BY categoria ORDER BY total DESC",
+        "additionalFields": {}
+      },
+      "id": "sub4-0002-0002-0002-000000000002",
+      "name": "Postgres: Resumen Periodo",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [220, 300],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER",
+          "name": "Postgres - Personal Assistant"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst periodo = $('Execute Sub-workflow Trigger').item.json.periodo;\n\nconst categorias = items.filter(item => item.json.total != null);\n\nif (categorias.length === 0) {\n  const labels = { hoy: 'hoy', semana: 'esta semana', mes: 'este mes' };\n  const label = labels[periodo] || periodo;\n  return [{ json: { output: `No hay gastos registrados ${label}.` } }];\n}\n\nconst totalGeneral = categorias.reduce((sum, item) => sum + parseFloat(item.json.total), 0);\n\nconst desglose = categorias\n  .map(item => `  • ${item.json.categoria}: $${parseFloat(item.json.total).toFixed(2)}`)\n  .join('\\n');\n\nconst labels = { hoy: 'de hoy', semana: 'de esta semana', mes: 'de este mes' };\nconst label = labels[periodo] || `del período: ${periodo}`;\n\nconst output = `Resumen ${label}:\\nTotal: $${totalGeneral.toFixed(2)}\\n\\nPor categoría:\\n${desglose}`;\n\nreturn [{ json: { output } }];"
+      },
+      "id": "sub4-0003-0003-0003-000000000003",
+      "name": "Code: Formatear Resumen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-001",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "sub4-0004-0004-0004-000000000004",
+      "name": "Set: Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [660, 300]
+    }
+  ],
+  "connections": {
+    "Execute Sub-workflow Trigger": {
+      "main": [
+        [{ "node": "Postgres: Resumen Periodo", "type": "main", "index": 0 }]
+      ]
+    },
+    "Postgres: Resumen Periodo": {
+      "main": [
+        [{ "node": "Code: Formatear Resumen", "type": "main", "index": 0 }]
+      ]
+    },
+    "Code: Formatear Resumen": {
+      "main": [
+        [{ "node": "Set: Output", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {}
+}

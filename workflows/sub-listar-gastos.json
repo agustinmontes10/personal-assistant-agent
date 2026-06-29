@@ -1,0 +1,100 @@
+{
+  "name": "Sub: Listar Gastos",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSchema": {
+          "fields": {
+            "values": [
+              {
+                "id": "field-001",
+                "fieldName": "phone_number",
+                "fieldType": "string"
+              },
+              {
+                "id": "field-002",
+                "fieldName": "cantidad",
+                "fieldType": "number"
+              }
+            ]
+          }
+        }
+      },
+      "id": "sub3-0001-0001-0001-000000000001",
+      "name": "Execute Sub-workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, monto, categoria, descripcion, fecha FROM gastos WHERE phone_number = '{{ $json.phone_number }}' ORDER BY fecha DESC LIMIT {{ $json.cantidad }}",
+        "additionalFields": {}
+      },
+      "id": "sub3-0002-0002-0002-000000000002",
+      "name": "Postgres: Listar Gastos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [220, 300],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER",
+          "name": "Postgres - Personal Assistant"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst gastos = items.filter(item => item.json.id != null);\n\nif (gastos.length === 0) {\n  return [{ json: { output: 'No se encontraron gastos registrados.' } }];\n}\n\nconst lines = gastos.map((item, i) => {\n  const fecha = new Date(item.json.fecha).toLocaleDateString('es-AR');\n  const monto = parseFloat(item.json.monto).toFixed(2);\n  return `${i + 1}. $${monto} — ${item.json.categoria} — ${item.json.descripcion} (${fecha})`;\n});\n\nconst subtotales = {};\nfor (const item of gastos) {\n  const cat = item.json.categoria;\n  subtotales[cat] = (subtotales[cat] || 0) + parseFloat(item.json.monto);\n}\n\nconst resumen = Object.entries(subtotales)\n  .sort((a, b) => b[1] - a[1])\n  .map(([cat, total]) => `  • ${cat}: $${total.toFixed(2)}`)\n  .join('\\n');\n\nconst output = `Últimos ${gastos.length} gastos:\\n${lines.join('\\n')}\\n\\nSubtotal por categoría:\\n${resumen}`;\n\nreturn [{ json: { output } }];"
+      },
+      "id": "sub3-0003-0003-0003-000000000003",
+      "name": "Code: Formatear Lista",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-001",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "sub3-0004-0004-0004-000000000004",
+      "name": "Set: Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [660, 300]
+    }
+  ],
+  "connections": {
+    "Execute Sub-workflow Trigger": {
+      "main": [
+        [{ "node": "Postgres: Listar Gastos", "type": "main", "index": 0 }]
+      ]
+    },
+    "Postgres: Listar Gastos": {
+      "main": [
+        [{ "node": "Code: Formatear Lista", "type": "main", "index": 0 }]
+      ]
+    },
+    "Code: Formatear Lista": {
+      "main": [
+        [{ "node": "Set: Output", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {}
+}

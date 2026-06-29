@@ -110,19 +110,17 @@
             {
               "id": "cond-002",
               "leftValue": "={{ $('Execute Sub-workflow Trigger').item.json.nombre }}",
-              "rightValue": "",
               "operator": {
                 "type": "string",
-                "operation": "notEquals"
+                "operation": "isNotEmpty"
               }
             },
             {
               "id": "cond-003",
               "leftValue": "={{ $('Execute Sub-workflow Trigger').item.json.apellido }}",
-              "rightValue": "",
               "operator": {
                 "type": "string",
-                "operation": "notEquals"
+                "operation": "isNotEmpty"
               }
             }
           ],
