@@ -39,7 +39,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO gastos (phone_number, monto, categoria, descripcion) VALUES ('{{ $json.phone_number }}', {{ $json.monto }}, '{{ $json.categoria }}', '{{ $json.descripcion }}') RETURNING id",
+        "query": "INSERT INTO gastos (phone_number, monto, categoria, descripcion) VALUES ('{{ $json.phone_number }}', {{ $json.monto }}, '{{ $json.categoria }}', NULLIF(NULLIF('{{ $json.descripcion }}', ''), 'null')) RETURNING id",
         "additionalFields": {}
       },
       "id": "sub2-0002-0002-0002-000000000002",
@@ -61,7 +61,7 @@
             {
               "id": "assign-001",
               "name": "output",
-              "value": "=Gasto registrado correctamente con ID #{{ $json.id }}. Monto: ${{ $('Execute Sub-workflow Trigger').item.json.monto }}, Categoría: {{ $('Execute Sub-workflow Trigger').item.json.categoria }}, Descripción: {{ $('Execute Sub-workflow Trigger').item.json.descripcion }}.",
+              "value": "=Gasto registrado correctamente con ID #{{ $json.id }}. Monto: ${{ $('Execute Sub-workflow Trigger').item.json.monto }}, Categoría: {{ $('Execute Sub-workflow Trigger').item.json.categoria }}{{ $('Execute Sub-workflow Trigger').item.json.descripcion && $('Execute Sub-workflow Trigger').item.json.descripcion !== 'null' ? ', Descripción: ' + $('Execute Sub-workflow Trigger').item.json.descripcion : '' }}.",
               "type": "string"
             }
           ]

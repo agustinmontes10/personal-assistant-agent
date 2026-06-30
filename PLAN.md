@@ -21,7 +21,7 @@
 
 ### Pruebas end-to-end
 - [x] Flujo de registro de usuario nuevo
-- [ ] Flujo de registro de gasto con confirmación
+- [x] Flujo de registro de gasto con confirmación
 - [ ] Flujo de listado de gastos
 - [ ] Flujo de resumen por período
 
