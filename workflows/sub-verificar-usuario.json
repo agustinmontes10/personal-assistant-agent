@@ -3,45 +3,31 @@
   "nodes": [
     {
       "parameters": {
-        "inputSchema": {
-          "fields": {
-            "values": [
-              {
-                "id": "field-001",
-                "fieldName": "phone_number",
-                "fieldType": "string"
-              },
-              {
-                "id": "field-002",
-                "fieldName": "nombre",
-                "fieldType": "string"
-              },
-              {
-                "id": "field-003",
-                "fieldName": "apellido",
-                "fieldType": "string"
-              }
-            ]
-          }
+        "workflowInputs": {
+          "values": [
+            { "name": "phone_number" },
+            { "name": "nombre" },
+            { "name": "apellido" }
+          ]
         }
       },
-      "id": "sub1-0001-0001-0001-000000000001",
+      "id": "2474ae9b-4e9c-4673-8e68-fbe71071047b",
       "name": "Execute Sub-workflow Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
-      "position": [0, 300]
+      "position": [-1408, 112]
     },
     {
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT (COUNT(*) > 0)::boolean AS existe, MAX(nombre) AS nombre, MAX(apellido) AS apellido FROM usuarios WHERE phone_number = '{{ $json.phone_number }}'",
-        "additionalFields": {}
+        "options": {}
       },
-      "id": "sub1-0002-0002-0002-000000000002",
+      "id": "b5314bb1-a840-4632-96cb-5fa55446e97d",
       "name": "Postgres: Buscar Usuario",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [220, 300],
+      "position": [-1200, 112],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER",
@@ -55,28 +41,26 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "loose"
+            "typeValidation": "strict",
+            "version": 1
           },
           "conditions": [
             {
               "id": "cond-001",
               "leftValue": "={{ $json.existe }}",
               "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "equals"
-              }
+              "operator": { "type": "boolean", "operation": "equals" }
             }
           ],
           "combinator": "and"
         },
         "options": {}
       },
-      "id": "sub1-0003-0003-0003-000000000003",
+      "id": "50dfb8fe-975f-40bc-a93c-49c8970e02ff",
       "name": "IF: Usuario existe?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [440, 300]
+      "position": [-976, 112]
     },
     {
       "parameters": {
@@ -85,18 +69,38 @@
             {
               "id": "assign-001",
               "name": "output",
-              "value": "=Usuario verificado. Nombre: {{ $('Postgres: Buscar Usuario').item.json.nombre }} {{ $('Postgres: Buscar Usuario').item.json.apellido }}. El usuario ya está registrado y puede operar.",
+              "value": "=Usuario verificado. Nombre: {{ $json.nombre }} {{ $json.apellido }}. El usuario ya está registrado y puede operar.",
               "type": "string"
             }
           ]
         },
         "options": {}
       },
-      "id": "sub1-0004-0004-0004-000000000004",
+      "id": "719dad8b-4090-4a34-be83-07156294d9a6",
       "name": "Set: Usuario Encontrado",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.3,
-      "position": [660, 160]
+      "position": [-752, -32]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-flag-001",
+              "name": "datos_provistos",
+              "value": "={{ $('Execute Sub-workflow Trigger').item.json.nombre != null && $('Execute Sub-workflow Trigger').item.json.nombre != '' && $('Execute Sub-workflow Trigger').item.json.apellido != null && $('Execute Sub-workflow Trigger').item.json.apellido != '' }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": { "includeOtherFields": true }
+      },
+      "id": "set-flag-0001-0001-0001-000000000001",
+      "name": "Set: Computar Flag",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [-864, 340]
     },
     {
       "parameters": {
@@ -104,47 +108,38 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "loose"
+            "typeValidation": "strict",
+            "version": 1
           },
           "conditions": [
             {
               "id": "cond-002",
-              "leftValue": "={{ $('Execute Sub-workflow Trigger').item.json.nombre }}",
-              "operator": {
-                "type": "string",
-                "operation": "isNotEmpty"
-              }
-            },
-            {
-              "id": "cond-003",
-              "leftValue": "={{ $('Execute Sub-workflow Trigger').item.json.apellido }}",
-              "operator": {
-                "type": "string",
-                "operation": "isNotEmpty"
-              }
+              "leftValue": "={{ $json.datos_provistos }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
             }
           ],
           "combinator": "and"
         },
         "options": {}
       },
-      "id": "sub1-0005-0005-0005-000000000005",
+      "id": "34510e17-095c-4be5-ae35-9057af6231c7",
       "name": "IF: Datos provistos?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [660, 440]
+      "position": [-640, 340]
     },
     {
       "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO usuarios (phone_number, nombre, apellido) VALUES ('{{ $('Execute Sub-workflow Trigger').item.json.phone_number }}', '{{ $('Execute Sub-workflow Trigger').item.json.nombre }}', '{{ $('Execute Sub-workflow Trigger').item.json.apellido }}') RETURNING id, nombre, apellido",
-        "additionalFields": {}
+        "options": {}
       },
-      "id": "sub1-0006-0006-0006-000000000006",
+      "id": "89f1604a-dd66-4bc1-8fab-3a9858f89f8e",
       "name": "Postgres: Registrar Usuario",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [880, 360],
+      "position": [-416, 256],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER",
@@ -166,11 +161,11 @@
         },
         "options": {}
       },
-      "id": "sub1-0007-0007-0007-000000000007",
+      "id": "98d12255-ff70-49ab-a36b-bba0235609cb",
       "name": "Set: Usuario Registrado",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.3,
-      "position": [1100, 360]
+      "position": [-208, 256]
     },
     {
       "parameters": {
@@ -186,29 +181,28 @@
         },
         "options": {}
       },
-      "id": "sub1-0008-0008-0008-000000000008",
+      "id": "43f54352-1a5a-4e4d-bf93-6aa0bcfb47e9",
       "name": "Set: Solicitar Datos",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.3,
-      "position": [880, 540]
+      "position": [-416, 432]
     }
   ],
   "connections": {
     "Execute Sub-workflow Trigger": {
-      "main": [
-        [{ "node": "Postgres: Buscar Usuario", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "Postgres: Buscar Usuario", "type": "main", "index": 0 }]]
     },
     "Postgres: Buscar Usuario": {
-      "main": [
-        [{ "node": "IF: Usuario existe?", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "IF: Usuario existe?", "type": "main", "index": 0 }]]
     },
     "IF: Usuario existe?": {
       "main": [
         [{ "node": "Set: Usuario Encontrado", "type": "main", "index": 0 }],
-        [{ "node": "IF: Datos provistos?", "type": "main", "index": 0 }]
+        [{ "node": "Set: Computar Flag", "type": "main", "index": 0 }]
       ]
+    },
+    "Set: Computar Flag": {
+      "main": [[{ "node": "IF: Datos provistos?", "type": "main", "index": 0 }]]
     },
     "IF: Datos provistos?": {
       "main": [
@@ -217,14 +211,10 @@
       ]
     },
     "Postgres: Registrar Usuario": {
-      "main": [
-        [{ "node": "Set: Usuario Registrado", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "Set: Usuario Registrado", "type": "main", "index": 0 }]]
     }
   },
-  "settings": {
-    "executionOrder": "v1"
-  },
+  "settings": { "executionOrder": "v1" },
   "staticData": null,
   "pinData": {}
 }
