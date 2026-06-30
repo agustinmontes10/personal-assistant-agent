@@ -30,13 +30,13 @@
 ## Fase 1.5 — Funcionalidades adicionales
 
 ### Nuevas tools
-- [ ] `eliminar_gasto` — eliminar un gasto por ID o el último registrado (`workflows/sub-eliminar-gasto.json`)
-- [ ] `editar_gasto` — modificar monto, categoría o descripción de un gasto existente (`workflows/sub-editar-gasto.json`)
+- [x] `eliminar_gasto` — eliminar un gasto por ID o el último registrado (`workflows/sub-eliminar-gasto.json`)
+- [x] `editar_gasto` — modificar monto, categoría o descripción de un gasto existente (`workflows/sub-editar-gasto.json`)
 - [ ] `presupuestos` — definir límite mensual por categoría y consultar estado (`workflows/sub-presupuestos.json`)
   - Requiere nueva tabla `presupuestos` en la DB
   - El agente avisa al registrar un gasto si se supera o está cerca del límite
-- [ ] `buscar_gastos` — filtrar gastos por categoría, descripción o rango de fechas (`workflows/sub-buscar-gastos.json`)
-- [ ] `comparar_periodos` — comparar gasto total o por categoría entre dos períodos (`workflows/sub-comparar-periodos.json`)
+- [x] `buscar_gastos` — filtrar gastos por categoría, descripción o rango de fechas (`workflows/sub-buscar-gastos.json`)
+- [x] `comparar_periodos` — comparar gasto total o por categoría entre dos períodos (`workflows/sub-comparar-periodos.json`)
 
 ### Mejoras al agente
 - [ ] Soporte para múltiples gastos en un mensaje ("gasté 500 en comida, 1200 en nafta y 300 en café")

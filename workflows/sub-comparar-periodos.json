@@ -1,0 +1,96 @@
+{
+  "name": "Sub: Comparar Periodos",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            { "name": "phone_number" },
+            { "name": "periodo1" },
+            { "name": "periodo2" }
+          ]
+        }
+      },
+      "id": "comp-0001",
+      "name": "Execute Sub-workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nfunction buildDateFilter(periodo) {\n  if (periodo === 'hoy') return `fecha::date = CURRENT_DATE`;\n  if (periodo === 'ayer') return `fecha::date = CURRENT_DATE - 1`;\n  if (periodo === 'semana') return `fecha >= NOW() - INTERVAL '7 days'`;\n  if (periodo === 'semana_pasada') return `fecha >= NOW() - INTERVAL '14 days' AND fecha < NOW() - INTERVAL '7 days'`;\n  if (periodo === 'mes') return `DATE_TRUNC('month', fecha) = DATE_TRUNC('month', NOW())`;\n  if (periodo === 'mes_pasado') return `DATE_TRUNC('month', fecha) = DATE_TRUNC('month', NOW() - INTERVAL '1 month')`;\n  return `fecha::date = CURRENT_DATE`;\n}\n\nconst f1 = buildDateFilter(input.periodo1);\nconst f2 = buildDateFilter(input.periodo2);\n\nconst query = `SELECT '${input.periodo1}' AS periodo, categoria, SUM(monto) AS total FROM gastos WHERE phone_number = '${input.phone_number}' AND ${f1} GROUP BY categoria UNION ALL SELECT '${input.periodo2}' AS periodo, categoria, SUM(monto) AS total FROM gastos WHERE phone_number = '${input.phone_number}' AND ${f2} GROUP BY categoria ORDER BY periodo, total DESC`;\n\nreturn [{ json: { query, periodo1: input.periodo1, periodo2: input.periodo2 } }];"
+      },
+      "id": "comp-0002",
+      "name": "Code: Build Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.query }}",
+        "options": {}
+      },
+      "id": "comp-0003",
+      "name": "Postgres: Comparar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [440, 300],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER",
+          "name": "Postgres - Personal Assistant"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst meta = $('Code: Build Query').first().json;\nconst rows = items.filter(item => item.json.periodo != null);\n\nif (rows.length === 0) {\n  return [{ json: { output: 'No hay gastos en ninguno de los dos periodos para comparar.' } }];\n}\n\nconst labels = { hoy: 'Hoy', ayer: 'Ayer', semana: 'Esta semana', semana_pasada: 'Semana pasada', mes: 'Este mes', mes_pasado: 'Mes pasado' };\n\nfunction formatPeriodo(periodo, data) {\n  const label = labels[periodo] || periodo;\n  const cats = data.filter(r => r.json.periodo === periodo);\n  if (cats.length === 0) return `${label}: Sin gastos`;\n  const total = cats.reduce((sum, r) => sum + parseFloat(r.json.total), 0);\n  const lines = cats.map(r => `  - ${r.json.categoria}: $${parseFloat(r.json.total).toFixed(2)}`).join('\\n');\n  return `${label}: $${total.toFixed(2)}\\n${lines}`;\n}\n\nconst p1 = formatPeriodo(meta.periodo1, rows);\nconst p2 = formatPeriodo(meta.periodo2, rows);\n\nconst t1 = rows.filter(r => r.json.periodo === meta.periodo1).reduce((s, r) => s + parseFloat(r.json.total), 0);\nconst t2 = rows.filter(r => r.json.periodo === meta.periodo2).reduce((s, r) => s + parseFloat(r.json.total), 0);\nconst diff = t1 - t2;\nconst diffStr = diff >= 0 ? `+$${diff.toFixed(2)}` : `-$${Math.abs(diff).toFixed(2)}`;\n\nconst output = `Comparacion:\\n\\n${p1}\\n\\n${p2}\\n\\nDiferencia: ${diffStr}`;\nreturn [{ json: { output } }];"
+      },
+      "id": "comp-0004",
+      "name": "Code: Formatear Comparacion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-001",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "comp-0005",
+      "name": "Set: Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [880, 300]
+    }
+  ],
+  "connections": {
+    "Execute Sub-workflow Trigger": {
+      "main": [[{ "node": "Code: Build Query", "type": "main", "index": 0 }]]
+    },
+    "Code: Build Query": {
+      "main": [[{ "node": "Postgres: Comparar", "type": "main", "index": 0 }]]
+    },
+    "Postgres: Comparar": {
+      "main": [[{ "node": "Code: Formatear Comparacion", "type": "main", "index": 0 }]]
+    },
+    "Code: Formatear Comparacion": {
+      "main": [[{ "node": "Set: Output", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "pinData": {}
+}

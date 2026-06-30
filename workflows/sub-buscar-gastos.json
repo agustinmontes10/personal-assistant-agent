@@ -1,0 +1,98 @@
+{
+  "name": "Sub: Buscar Gastos",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            { "name": "phone_number" },
+            { "name": "categoria" },
+            { "name": "descripcion" },
+            { "name": "fecha_desde" },
+            { "name": "fecha_hasta" }
+          ]
+        }
+      },
+      "id": "buscar-0001",
+      "name": "Execute Sub-workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst conditions = [`phone_number = '${input.phone_number}'`];\n\nif (input.categoria && input.categoria !== '' && input.categoria !== 'null') {\n  conditions.push(`categoria = '${input.categoria}'`);\n}\nif (input.descripcion && input.descripcion !== '' && input.descripcion !== 'null') {\n  conditions.push(`descripcion ILIKE '%${input.descripcion.replace(/'/g, \"''\")}%'`);\n}\nif (input.fecha_desde && input.fecha_desde !== '' && input.fecha_desde !== 'null') {\n  conditions.push(`fecha >= '${input.fecha_desde}'`);\n}\nif (input.fecha_hasta && input.fecha_hasta !== '' && input.fecha_hasta !== 'null') {\n  conditions.push(`fecha <= '${input.fecha_hasta}'::date + INTERVAL '1 day'`);\n}\n\nconst query = `SELECT id, monto, categoria, descripcion, fecha FROM gastos WHERE ${conditions.join(' AND ')} ORDER BY fecha DESC LIMIT 20`;\nreturn [{ json: { query } }];"
+      },
+      "id": "buscar-0002",
+      "name": "Code: Build Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.query }}",
+        "options": {}
+      },
+      "id": "buscar-0003",
+      "name": "Postgres: Buscar Gastos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [440, 300],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER",
+          "name": "Postgres - Personal Assistant"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst gastos = items.filter(item => item.json.id != null);\n\nif (gastos.length === 0) {\n  return [{ json: { output: 'No se encontraron gastos con esos filtros.' } }];\n}\n\nconst total = gastos.reduce((sum, item) => sum + parseFloat(item.json.monto), 0);\n\nconst lines = gastos.map((item, i) => {\n  const fecha = new Date(item.json.fecha).toLocaleDateString('es-AR');\n  const monto = parseFloat(item.json.monto).toFixed(2);\n  const desc = item.json.descripcion ? ` \\u2014 ${item.json.descripcion}` : '';\n  return `${i + 1}. $${monto} \\u2014 ${item.json.categoria}${desc} (${fecha}) [ID #${item.json.id}]`;\n});\n\nconst output = `Encontrados ${gastos.length} gastos (total: $${total.toFixed(2)}):\\n${lines.join('\\n')}`;\nreturn [{ json: { output } }];"
+      },
+      "id": "buscar-0004",
+      "name": "Code: Formatear Resultado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-001",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "buscar-0005",
+      "name": "Set: Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [880, 300]
+    }
+  ],
+  "connections": {
+    "Execute Sub-workflow Trigger": {
+      "main": [[{ "node": "Code: Build Query", "type": "main", "index": 0 }]]
+    },
+    "Code: Build Query": {
+      "main": [[{ "node": "Postgres: Buscar Gastos", "type": "main", "index": 0 }]]
+    },
+    "Postgres: Buscar Gastos": {
+      "main": [[{ "node": "Code: Formatear Resultado", "type": "main", "index": 0 }]]
+    },
+    "Code: Formatear Resultado": {
+      "main": [[{ "node": "Set: Output", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "pinData": {}
+}

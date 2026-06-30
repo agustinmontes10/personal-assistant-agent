@@ -1,0 +1,85 @@
+{
+  "name": "Sub: Editar Gasto",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            { "name": "phone_number" },
+            { "name": "gasto_id", "type": "number" },
+            { "name": "nuevo_monto" },
+            { "name": "nueva_categoria" },
+            { "name": "nueva_descripcion" }
+          ]
+        }
+      },
+      "id": "edit-0001",
+      "name": "Execute Sub-workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE gastos SET monto = CASE WHEN '{{ $json.nuevo_monto }}' IN ('', 'null') THEN monto ELSE CAST('{{ $json.nuevo_monto }}' AS DECIMAL(10,2)) END, categoria = CASE WHEN '{{ $json.nueva_categoria }}' IN ('', 'null') THEN categoria ELSE '{{ $json.nueva_categoria }}' END, descripcion = CASE WHEN '{{ $json.nueva_descripcion }}' IN ('', 'null') THEN descripcion ELSE '{{ $json.nueva_descripcion }}' END WHERE id = {{ $json.gasto_id }} AND phone_number = '{{ $json.phone_number }}' RETURNING id, monto, categoria, descripcion",
+        "options": {}
+      },
+      "id": "edit-0002",
+      "name": "Postgres: Editar Gasto",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [220, 300],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER",
+          "name": "Postgres - Personal Assistant"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst updated = items.filter(item => item.json.id != null);\n\nif (updated.length === 0) {\n  return [{ json: { output: 'No se encontró el gasto con ese ID, o no pertenece a tu cuenta.' } }];\n}\n\nconst g = updated[0].json;\nconst desc = g.descripcion ? ` — ${g.descripcion}` : '';\nreturn [{ json: { output: `Gasto actualizado correctamente (ID #${g.id}): $${parseFloat(g.monto).toFixed(2)} en ${g.categoria}${desc}.` } }];"
+      },
+      "id": "edit-0003",
+      "name": "Code: Formatear Resultado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-001",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "edit-0004",
+      "name": "Set: Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [660, 300]
+    }
+  ],
+  "connections": {
+    "Execute Sub-workflow Trigger": {
+      "main": [[{ "node": "Postgres: Editar Gasto", "type": "main", "index": 0 }]]
+    },
+    "Postgres: Editar Gasto": {
+      "main": [[{ "node": "Code: Formatear Resultado", "type": "main", "index": 0 }]]
+    },
+    "Code: Formatear Resultado": {
+      "main": [[{ "node": "Set: Output", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "pinData": {}
+}
