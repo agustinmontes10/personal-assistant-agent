@@ -1,0 +1,87 @@
+{
+  "name": "Sub: Consultar Presupuestos",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "phone_number"
+            }
+          ]
+        }
+      },
+      "id": "22222222-0001-0001-0001-000000000001",
+      "name": "Execute Sub-workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.categoria, p.monto_limite, COALESCE((SELECT SUM(g.monto) FROM gastos g WHERE g.phone_number = p.phone_number AND g.categoria = p.categoria AND DATE_TRUNC('month', g.fecha) = DATE_TRUNC('month', NOW())), 0) AS gastado FROM presupuestos p WHERE p.phone_number = '{{ $json.phone_number }}' ORDER BY p.categoria",
+        "options": {}
+      },
+      "id": "22222222-0002-0002-0002-000000000002",
+      "name": "Postgres: Listar Presupuestos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        224,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "TyHuDs86VO4FrazA",
+          "name": "Postgres - Personal Assistant"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nif (rows.length === 0) {\n  return [{ json: { output: 'No tenés presupuestos definidos todavía. Podés crear uno diciendo, por ejemplo: \\\"poné un presupuesto de 50000 en Comida\\\".' } }];\n}\nconst lines = ['📊 Presupuestos de este mes:'];\nfor (const r of rows) {\n  const j = r.json;\n  const lim = Number(j.monto_limite);\n  const gastado = Number(j.gastado);\n  const pct = lim > 0 ? Math.round((gastado / lim) * 100) : 0;\n  const restante = lim - gastado;\n  let marca = '';\n  if (gastado > lim) marca = ' ⚠️ superado';\n  else if (pct >= 80) marca = ' ⚠️ cerca del límite';\n  lines.push(`• ${j.categoria}: $${gastado} / $${lim} (${pct}%) — restante $${restante}${marca}`);\n}\nreturn [{ json: { output: lines.join('\n') } }];"
+      },
+      "id": "22222222-0003-0003-0003-000000000003",
+      "name": "Code: Formatear Presupuestos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Execute Sub-workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Listar Presupuestos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres: Listar Presupuestos": {
+      "main": [
+        [
+          {
+            "node": "Code: Formatear Presupuestos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  }
+}

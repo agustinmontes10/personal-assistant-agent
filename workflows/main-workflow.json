@@ -5,11 +5,14 @@
       "parameters": {
         "options": {}
       },
-      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "id": "0852d5df-c8d6-4809-9ca1-38a3ba332fde",
       "name": "Chat Trigger",
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
-      "position": [0, 300],
+      "position": [
+        -704,
+        448
+      ],
       "webhookId": "personal-assistant-main"
     },
     {
@@ -22,179 +25,822 @@
         },
         "options": {}
       },
-      "id": "a1b2c3d4-0002-0002-0002-000000000002",
+      "id": "2e527bad-700e-40be-880e-7944d2828ce4",
       "name": "OpenAI Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
-      "position": [220, 540],
+      "position": [
+        -480,
+        688
+      ],
       "credentials": {
         "openAiApi": {
-          "id": "PLACEHOLDER",
+          "id": "9vxsodMdLd5pKDr8",
           "name": "OpenAi Model - Aesthetic"
         }
       }
     },
     {
       "parameters": {
-        "sessionIdType": "fromInput",
         "sessionKey": "={{ $('Chat Trigger').item.json.sessionId }}",
         "contextWindowLength": 20
       },
-      "id": "a1b2c3d4-0003-0003-0003-000000000003",
+      "id": "b82bd591-d31e-4de6-8137-6977484d144c",
       "name": "Simple Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
-      "position": [440, 540]
+      "position": [
+        -256,
+        688
+      ]
     },
     {
       "parameters": {
         "promptType": "define",
         "text": "={{ $json.chatInput }}",
-        "systemMessage": "Sos un asistente personal de gastos. Respondé siempre en español, de forma clara y concisa.\n\nEl número de teléfono del usuario actual es +5491112345678.\nSiempre pasá este valor exacto como phone_number cuando llames a cualquier tool.\n\nCategorías válidas: Comida, Transporte, Servicios, Salud, Entretenimiento, Ropa, Tecnología, Otros.\n\nReglas estrictas:\n1. En el primer mensaje de cada sesión, llamá a verificar_o_registrar_usuario para confirmar si el usuario existe.\n2. Si el usuario no está registrado, pedile nombre y apellido antes de continuar, luego registralo con esos datos.\n3. Cuando el usuario mencione un gasto, extraé monto, categoría y descripción del mensaje. Si falta algún dato, pedilo antes de continuar.\n4. Siempre mostrá un resumen del gasto y esperá confirmación explícita del usuario (sí/no) antes de llamar a registrar_gasto.\n5. Nunca uses categorías fuera de la lista. Si la categoría no está clara, preguntá al usuario.\n6. Para ver gastos recientes usá listar_gastos. Para resúmenes por período usá resumen_periodo con 'hoy', 'semana' o 'mes'.",
-        "options": {}
+        "options": {
+          "systemMessage": "=Sos un asistente personal de gastos. RespondÃ© siempre en espaÃ±ol, de forma clara y concisa.\n\n  El nÃºmero de telÃ©fono del usuario actual es +5491112345678.\n  Siempre pasÃ¡ este valor exacto como phone_number cuando llames a cualquier tool.\n\n  CategorÃ­as vÃ¡lidas: Comida, Transporte, Servicios, Salud, Entretenimiento, Ropa, TecnologÃ­a, Otros.\n\n  Reglas estrictas:\n  1. En el primer mensaje de cada sesiÃ³n, llamÃ¡ a verificar_o_registrar_usuario para confirmar si el usuario existe.\n  2. Si el usuario no estÃ¡ registrado, pedile nombre y apellido en el mismo mensaje. Cuando los proporcione (ej: \"Juan PÃ©rez\"), extraÃ© nombre=\"Juan\" y apellido=\"PÃ©rez\" por separado y llamÃ¡ a verificar_o_registrar_usuario con los tres campos: phone_number, nombre y apellido. No vuelvas a llamar al tool si ya recibiste nombre y apellido.\n  3. Cuando el usuario mencione un gasto, extraÃ© monto y categorÃ­a (obligatorios) y descripciÃ³n (opcional, solo si la menciona). Si falta monto o categorÃ­a, pedilos antes de continuar. Nunca pidas la descripciÃ³n: si no se menciona, pasÃ¡ string vacÃ­o.\n  4. Siempre mostrÃ¡ un resumen del gasto y esperÃ¡ confirmaciÃ³n explÃ­cita del usuario (sÃ­/no) antes de llamar a registrar_gasto.\n  5. Nunca uses categorÃ­as fuera de la lista. Si la categorÃ­a no estÃ¡ clara, preguntÃ¡ al usuario.\n  6. Para ver gastos recientes usÃ¡ listar_gastos. Para resÃºmenes por perÃ­odo usÃ¡ resumen_periodo con 'hoy', 'semana' o 'mes'.\n  7. Para eliminar un gasto, primero usÃ¡ listar_gastos para mostrar los gastos con sus IDs. ConfirmÃ¡ con el usuario cuÃ¡l quiere borrar antes de llamar a eliminar_gasto.\n  8. Para editar un gasto, primero usÃ¡ listar_gastos para mostrar los gastos con sus IDs. PreguntÃ¡ quÃ© campo quiere cambiar y llamÃ¡ a editar_gasto pasando solo los campos que cambian (los demÃ¡s dejÃ¡ como string vacÃ­o).\n  9. Para buscar gastos especÃ­ficos usÃ¡ buscar_gastos. PodÃ©s filtrar por categorÃ­a, descripciÃ³n (bÃºsqueda parcial) y/o rango de fechas (formato YYYY-MM-DD). PasÃ¡ string vacÃ­o en los filtros que no apliquen.\n  10. Para comparar gastos entre perÃ­odos usÃ¡ comparar_periodos. PerÃ­odos vÃ¡lidos: hoy, ayer, semana, semana_pasada, mes, mes_pasado.\n  11. Si el usuario menciona varios gastos en un mismo mensaje (ej: \"gasté 500 en comida, 1200 en nafta y 300 en café\"), extraé todos los gastos por separado. Mostrá un resumen conjunto numerado con monto, categoría y descripción de cada uno, y pedí UNA sola confirmación (sí/no) para todos. Si a algún gasto le falta monto o categoría, preguntá solo por ese dato antes de confirmar. Tras el sí, registralos llamando a registrar_gasto una vez por cada gasto (un tool call por cada gasto). Al terminar, confirmá cuántos gastos se registraron y el total.\n  12. Para definir o actualizar un presupuesto mensual por categoría, usá definir_presupuesto con la categoría y el monto límite (ej: \"poné un presupuesto de 50000 en Comida\").\n  13. Para consultar el estado de los presupuestos (gastado este mes vs límite por categoría) usá consultar_presupuestos. Al registrar un gasto el sistema ya avisa automáticamente si una categoría está cerca (≥80%) o superó su límite; no llames a ningún tool extra para ese aviso."
+        }
       },
-      "id": "a1b2c3d4-0004-0004-0004-000000000004",
+      "id": "d3c59bc2-8d48-49fe-839a-be722b5fd38f",
       "name": "AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
-      "position": [440, 300]
+      "position": [
+        -256,
+        448
+      ]
     },
     {
       "parameters": {
         "name": "verificar_o_registrar_usuario",
-        "description": "Verifica si el usuario existe en la base de datos usando su phone_number. Si no existe, lo registra con nombre y apellido. Llamar siempre en el primer mensaje de la sesión.",
+        "description": "Verifica si el usuario existe en la base de datos usando su phone_number. Si no existe, lo registra con nombre y apellido. Llamar siempre en el primer mensaje de la sesiÃ³n.",
         "workflowId": {
           "__rl": true,
-          "value": "",
+          "value": "qR5bTnFu5XBxPcTw",
           "mode": "id"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
-            "phone_number": "={{ $fromAI('phone_number', 'Número de teléfono del usuario', 'string') }}",
-            "nombre": "={{ $fromAI('nombre', 'Nombre del usuario. Requerido solo si el usuario no existe aún.', 'string') }}",
-            "apellido": "={{ $fromAI('apellido', 'Apellido del usuario. Requerido solo si el usuario no existe aún.', 'string') }}"
-          }
+            "phone_number": "={{ $fromAI('phone_number', `NÃºmero de telÃ©fono del usuario`, 'string') }}",
+            "apellido": "={{ $fromAI('apellido', `Apellido del usuario, solo si no existe aÃºn`, 'string') ?? '' }}",
+            "nombre": "={{ $fromAI('nombre', `Nombre del usuario, solo si no existe aÃºn`, 'string') ?? '' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "apellido",
+              "displayName": "apellido",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
-      "id": "a1b2c3d4-0005-0005-0005-000000000005",
+      "id": "14511108-26c8-48f9-90d2-69f41e5258df",
       "name": "Tool: Verificar Usuario",
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2,
-      "position": [700, 140]
+      "position": [
+        0,
+        688
+      ]
     },
     {
       "parameters": {
         "name": "registrar_gasto",
-        "description": "Guarda un gasto en la base de datos. Llamar SOLO después de que el usuario confirmó explícitamente con 'sí'. Nunca llamar sin confirmación previa del usuario.",
+        "description": "Guarda un gasto en la base de datos. Llamar SOLO despuÃ©s de que el usuario confirmÃ³ explÃ­citamente con 'sÃ­'. Nunca llamar sin confirmaciÃ³n previa del usuario.",
         "workflowId": {
           "__rl": true,
-          "value": "",
+          "value": "EQIw3VEM4YH7p5Ag",
           "mode": "id"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
-            "phone_number": "={{ $fromAI('phone_number', 'Número de teléfono del usuario', 'string') }}",
-            "monto": "={{ $fromAI('monto', 'Monto del gasto en pesos argentinos', 'number') }}",
-            "categoria": "={{ $fromAI('categoria', 'Categoría del gasto. Valores válidos: Comida, Transporte, Servicios, Salud, Entretenimiento, Ropa, Tecnología, Otros', 'string') }}",
-            "descripcion": "={{ $fromAI('descripcion', 'Descripción breve del gasto extraída del mensaje del usuario', 'string') }}"
-          }
+            "monto": "={{ $fromAI('monto', `Monto del gasto`, 'number') }}",
+            "phone_number": "={{ $fromAI('phone_number', `NÃºmero de telÃ©fono del usuario`, 'string') }}",
+            "categoria": "={{ $fromAI('categoria', `CategorÃ­a del gasto`, 'string') }}",
+            "descripcion": "={{ $fromAI('descripcion', `DescripciÃ³n del gasto, pasÃ¡ string vacÃ­o si no se mencionÃ³`, 'string') ?? '' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "monto",
+              "displayName": "monto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "categoria",
+              "displayName": "categoria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "descripcion",
+              "displayName": "descripcion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
-      "id": "a1b2c3d4-0006-0006-0006-000000000006",
+      "id": "3e1e9dcd-c9eb-4e87-86d1-e25a5c81f465",
       "name": "Tool: Registrar Gasto",
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2,
-      "position": [700, 300]
+      "position": [
+        -48,
+        848
+      ]
     },
     {
       "parameters": {
         "name": "listar_gastos",
-        "description": "Lista los últimos N gastos del usuario con subtotal por categoría. Usar cuando el usuario quiera ver sus gastos recientes.",
+        "description": "Lista los Ãºltimos N gastos del usuario con subtotal por categorÃ­a. Usar cuando el usuario quiera ver sus gastos recientes, o antes de eliminar/editar un gasto para obtener el ID.",
         "workflowId": {
           "__rl": true,
-          "value": "",
+          "value": "sZ1vimeJWihfq4AW",
           "mode": "id"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
-            "phone_number": "={{ $fromAI('phone_number', 'Número de teléfono del usuario', 'string') }}",
-            "cantidad": "={{ $fromAI('cantidad', 'Cantidad de gastos a listar. Usar 5 si el usuario no especifica un número.', 'number') }}"
-          }
+            "cantidad": "={{ $fromAI('cantidad', `Cantidad de gastos a listar`, 'number') }}",
+            "phone_number": "={{ $fromAI('phone_number', `NÃºmero de telÃ©fono del usuario`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "cantidad",
+              "displayName": "cantidad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
-      "id": "a1b2c3d4-0007-0007-0007-000000000007",
+      "id": "977618e9-341f-45fb-8f2c-be812245218c",
       "name": "Tool: Listar Gastos",
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2,
-      "position": [700, 460]
+      "position": [
+        -224,
+        848
+      ]
     },
     {
       "parameters": {
         "name": "resumen_periodo",
-        "description": "Muestra el total gastado y el desglose por categoría para un período. Usar cuando el usuario pregunte cuánto gastó hoy, esta semana o este mes.",
+        "description": "Muestra el total gastado y el desglose por categorÃ­a para un perÃ­odo. Usar cuando el usuario pregunte cuÃ¡nto gastÃ³ hoy, esta semana o este mes.",
         "workflowId": {
           "__rl": true,
-          "value": "",
+          "value": "DnvMBIxiWBTkeh3P",
           "mode": "id"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
-            "phone_number": "={{ $fromAI('phone_number', 'Número de teléfono del usuario', 'string') }}",
-            "periodo": "={{ $fromAI('periodo', 'Período a consultar. Valores válidos: hoy, semana, mes', 'string') }}"
-          }
+            "phone_number": "={{ $fromAI('phone_number', `NÃºmero de telÃ©fono del usuario`, 'string') }}",
+            "periodo": "={{ $fromAI('periodo', `PerÃ­odo del resumen: hoy, semana o mes`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "periodo",
+              "displayName": "periodo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       },
-      "id": "a1b2c3d4-0008-0008-0008-000000000008",
-      "name": "Tool: Resumen Período",
+      "id": "224b569b-5b35-42ec-98c5-686a4692578b",
+      "name": "Tool: Resumen PerÃ­odo",
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2,
-      "position": [700, 620]
+      "position": [
+        -128,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "name": "eliminar_gasto",
+        "description": "Elimina un gasto de la base de datos por su ID. Llamar SOLO despuÃ©s de que el usuario confirmÃ³ explÃ­citamente que quiere borrar ese gasto. Primero usÃ¡ listar_gastos para obtener el ID.",
+        "workflowId": {
+          "__rl": true,
+          "value": "UJvwXUI3Irgmie8O",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone_number": "={{ $fromAI('phone_number', `NÃºmero de telÃ©fono del usuario`, 'string') }}",
+            "gasto_id": "={{ $fromAI('gasto_id', `ID del gasto a eliminar`, 'number') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "gasto_id",
+              "displayName": "gasto_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "tool-eliminar-001",
+      "name": "Tool: Eliminar Gasto",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        128,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "name": "editar_gasto",
+        "description": "Edita un gasto existente por su ID. Puede cambiar monto, categorÃ­a y/o descripciÃ³n. Solo pasÃ¡ los campos que cambian, los demÃ¡s dejÃ¡ como string vacÃ­o. Primero usÃ¡ listar_gastos para obtener el ID.",
+        "workflowId": {
+          "__rl": true,
+          "value": "CZpwqBbYF22al0Lb",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone_number": "={{ $fromAI('phone_number', `NÃºmero de telÃ©fono del usuario`, 'string') }}",
+            "gasto_id": "={{ $fromAI('gasto_id', `ID del gasto a editar`, 'number') }}",
+            "nuevo_monto": "={{ $fromAI('nuevo_monto', `Nuevo monto, string vacÃ­o si no cambia`, 'string') ?? '' }}",
+            "nueva_categoria": "={{ $fromAI('nueva_categoria', `Nueva categorÃ­a, string vacÃ­o si no cambia`, 'string') ?? '' }}",
+            "nueva_descripcion": "={{ $fromAI('nueva_descripcion', `Nueva descripciÃ³n, string vacÃ­o si no cambia`, 'string') ?? '' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "gasto_id",
+              "displayName": "gasto_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "nuevo_monto",
+              "displayName": "nuevo_monto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "nueva_categoria",
+              "displayName": "nueva_categoria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "nueva_descripcion",
+              "displayName": "nueva_descripcion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "tool-editar-001",
+      "name": "Tool: Editar Gasto",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        304,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "name": "buscar_gastos",
+        "description": "Busca gastos con filtros: categorÃ­a, descripciÃ³n (bÃºsqueda parcial) y/o rango de fechas. Usar cuando el usuario pregunte por gastos especÃ­ficos como 'cuÃ¡nto gastÃ© en Uber' o 'gastos de comida en junio'.",
+        "workflowId": {
+          "__rl": true,
+          "value": "kUXaX660MVpUeUHq",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone_number": "={{ $fromAI('phone_number', `NÃºmero de telÃ©fono del usuario`, 'string') }}",
+            "categoria": "={{ $fromAI('categoria', `CategorÃ­a a filtrar, string vacÃ­o si no aplica`, 'string') ?? '' }}",
+            "descripcion": "={{ $fromAI('descripcion', `Texto a buscar en descripciÃ³n, string vacÃ­o si no aplica`, 'string') ?? '' }}",
+            "fecha_desde": "={{ $fromAI('fecha_desde', `Fecha inicio YYYY-MM-DD, string vacÃ­o si no aplica`, 'string') ?? '' }}",
+            "fecha_hasta": "={{ $fromAI('fecha_hasta', `Fecha fin YYYY-MM-DD, string vacÃ­o si no aplica`, 'string') ?? '' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "categoria",
+              "displayName": "categoria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "descripcion",
+              "displayName": "descripcion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "fecha_desde",
+              "displayName": "fecha_desde",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "fecha_hasta",
+              "displayName": "fecha_hasta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "tool-buscar-001",
+      "name": "Tool: Buscar Gastos",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        128,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "name": "comparar_periodos",
+        "description": "Compara gastos totales y por categorÃ­a entre dos perÃ­odos. PerÃ­odos vÃ¡lidos: hoy, ayer, semana, semana_pasada, mes, mes_pasado. Usar cuando el usuario pregunte si gastÃ³ mÃ¡s o menos que otro perÃ­odo.",
+        "workflowId": {
+          "__rl": true,
+          "value": "JZ12Df0n5C3h76aX",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone_number": "={{ $fromAI('phone_number', `NÃºmero de telÃ©fono del usuario`, 'string') }}",
+            "periodo1": "={{ $fromAI('periodo1', `Primer perÃ­odo a comparar`, 'string') }}",
+            "periodo2": "={{ $fromAI('periodo2', `Segundo perÃ­odo a comparar`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "periodo1",
+              "displayName": "periodo1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "periodo2",
+              "displayName": "periodo2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "tool-comparar-001",
+      "name": "Tool: Comparar Periodos",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        304,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "name": "definir_presupuesto",
+        "description": "Define o actualiza el presupuesto (límite de gasto) mensual de una categoría. Usar cuando el usuario quiera fijar o cambiar cuánto puede gastar por mes en una categoría.",
+        "workflowId": {
+          "__rl": true,
+          "value": "IukLwefYgco2zJCJ",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone_number": "={{ $fromAI('phone_number', `Número de teléfono del usuario`, 'string') }}",
+            "categoria": "={{ $fromAI('categoria', `Categoría del presupuesto. Valores válidos: Comida, Transporte, Servicios, Salud, Entretenimiento, Ropa, Tecnología, Otros`, 'string') }}",
+            "monto_limite": "={{ $fromAI('monto_limite', `Monto límite mensual para la categoría`, 'number') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "categoria",
+              "displayName": "categoria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "monto_limite",
+              "displayName": "monto_limite",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "aaaa1111-0001-0001-0001-000000000001",
+      "name": "Tool: definir_presupuesto",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        400,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "name": "consultar_presupuestos",
+        "description": "Muestra el estado de los presupuestos del usuario: límite por categoría, cuánto lleva gastado este mes y el porcentaje usado. Usar cuando el usuario pregunte por sus presupuestos o cuánto le queda disponible.",
+        "workflowId": {
+          "__rl": true,
+          "value": "WkLWNk8CJQNFxKCO",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone_number": "={{ $fromAI('phone_number', `Número de teléfono del usuario`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "bbbb2222-0002-0002-0002-000000000002",
+      "name": "Tool: consultar_presupuestos",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        400,
+        1008
+      ]
     }
   ],
   "connections": {
     "Chat Trigger": {
       "main": [
-        [{ "node": "AI Agent", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "OpenAI Chat Model": {
       "ai_languageModel": [
-        [{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
       ]
     },
     "Simple Memory": {
       "ai_memory": [
-        [{ "node": "AI Agent", "type": "ai_memory", "index": 0 }]
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
       ]
     },
     "Tool: Verificar Usuario": {
       "ai_tool": [
-        [{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
       ]
     },
     "Tool: Registrar Gasto": {
       "ai_tool": [
-        [{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
       ]
     },
     "Tool: Listar Gastos": {
       "ai_tool": [
-        [{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Tool: Resumen Período": {
+    "Tool: Resumen PerÃ­odo": {
       "ai_tool": [
-        [{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: Eliminar Gasto": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: Editar Gasto": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: Buscar Gastos": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: Comparar Periodos": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: definir_presupuesto": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: consultar_presupuestos": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
       ]
     }
   },
   "settings": {
-    "executionOrder": "v1"
-  },
-  "staticData": null,
-  "pinData": {}
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
 }

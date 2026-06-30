@@ -3,93 +3,126 @@
   "nodes": [
     {
       "parameters": {
-        "inputSchema": {
-          "fields": {
-            "values": [
-              {
-                "id": "field-001",
-                "fieldName": "phone_number",
-                "fieldType": "string"
-              },
-              {
-                "id": "field-002",
-                "fieldName": "monto",
-                "fieldType": "number"
-              },
-              {
-                "id": "field-003",
-                "fieldName": "categoria",
-                "fieldType": "string"
-              },
-              {
-                "id": "field-004",
-                "fieldName": "descripcion",
-                "fieldType": "string"
-              }
-            ]
-          }
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "phone_number"
+            },
+            {
+              "name": "monto",
+              "type": "number"
+            },
+            {
+              "name": "categoria"
+            },
+            {
+              "name": "descripcion"
+            }
+          ]
         }
       },
-      "id": "sub2-0001-0001-0001-000000000001",
+      "id": "95af1ac4-348b-405e-816d-972d5a62e965",
       "name": "Execute Sub-workflow Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
-      "position": [0, 300]
+      "position": [
+        0,
+        0
+      ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO gastos (phone_number, monto, categoria, descripcion) VALUES ('{{ $json.phone_number }}', {{ $json.monto }}, '{{ $json.categoria }}', NULLIF(NULLIF('{{ $json.descripcion }}', ''), 'null')) RETURNING id",
-        "additionalFields": {}
+        "options": {}
       },
-      "id": "sub2-0002-0002-0002-000000000002",
+      "id": "95363c0e-bc17-4d00-9cff-4903d8c87a2d",
       "name": "Postgres: Insertar Gasto",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [220, 300],
+      "position": [
+        224,
+        0
+      ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER",
+          "id": "TyHuDs86VO4FrazA",
           "name": "Postgres - Personal Assistant"
         }
       }
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "assign-001",
-              "name": "output",
-              "value": "=Gasto registrado correctamente con ID #{{ $json.id }}. Monto: ${{ $('Execute Sub-workflow Trigger').item.json.monto }}, Categoría: {{ $('Execute Sub-workflow Trigger').item.json.categoria }}{{ $('Execute Sub-workflow Trigger').item.json.descripcion && $('Execute Sub-workflow Trigger').item.json.descripcion !== 'null' ? ', Descripción: ' + $('Execute Sub-workflow Trigger').item.json.descripcion : '' }}.",
-              "type": "string"
-            }
-          ]
-        },
+        "operation": "executeQuery",
+        "query": "SELECT (SELECT monto_limite FROM presupuestos WHERE phone_number = '{{ $('Execute Sub-workflow Trigger').item.json.phone_number }}' AND categoria = '{{ $('Execute Sub-workflow Trigger').item.json.categoria }}') AS monto_limite, (SELECT COALESCE(SUM(monto), 0) FROM gastos WHERE phone_number = '{{ $('Execute Sub-workflow Trigger').item.json.phone_number }}' AND categoria = '{{ $('Execute Sub-workflow Trigger').item.json.categoria }}' AND DATE_TRUNC('month', fecha) = DATE_TRUNC('month', NOW())) AS gastado",
         "options": {}
       },
-      "id": "sub2-0003-0003-0003-000000000003",
-      "name": "Set: Gasto Registrado",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.3,
-      "position": [440, 300]
+      "id": "95363c0e-bc17-4d00-9cff-4903d8c87a2e",
+      "name": "Postgres: Check Presupuesto",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        448,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "TyHuDs86VO4FrazA",
+          "name": "Postgres - Personal Assistant"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const t = $('Execute Sub-workflow Trigger').first().json;\nconst insert = $('Postgres: Insertar Gasto').first().json;\nconst chk = $input.first().json;\nlet out = `Gasto registrado correctamente con ID #${insert.id}. Monto: $${t.monto}, Categoría: ${t.categoria}`;\nif (t.descripcion && t.descripcion !== 'null' && t.descripcion !== '') {\n  out += `, Descripción: ${t.descripcion}`;\n}\nout += '.';\nif (chk.monto_limite !== null && chk.monto_limite !== undefined) {\n  const lim = Number(chk.monto_limite);\n  const gastado = Number(chk.gastado);\n  const pct = lim > 0 ? Math.round((gastado / lim) * 100) : 0;\n  if (gastado > lim) {\n    out += ` ⚠️ Superaste el presupuesto de ${t.categoria}: $${gastado} de $${lim} (${pct}%) este mes.`;\n  } else if (pct >= 80) {\n    out += ` ⚠️ Atención: llevás $${gastado} de $${lim} en ${t.categoria} este mes (${pct}%).`;\n  }\n}\nreturn [{ json: { output: out } }];"
+      },
+      "id": "95363c0e-bc17-4d00-9cff-4903d8c87a2f",
+      "name": "Code: Armar Respuesta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ]
     }
   ],
   "connections": {
     "Execute Sub-workflow Trigger": {
       "main": [
-        [{ "node": "Postgres: Insertar Gasto", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Postgres: Insertar Gasto",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Postgres: Insertar Gasto": {
       "main": [
-        [{ "node": "Set: Gasto Registrado", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Postgres: Check Presupuesto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres: Check Presupuesto": {
+      "main": [
+        [
+          {
+            "node": "Code: Armar Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
   "settings": {
     "executionOrder": "v1"
-  },
-  "staticData": null,
-  "pinData": {}
+  }
 }

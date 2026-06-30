@@ -1,0 +1,103 @@
+{
+  "name": "Sub: Definir Presupuesto",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "phone_number"
+            },
+            {
+              "name": "categoria"
+            },
+            {
+              "name": "monto_limite",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "id": "11111111-0001-0001-0001-000000000001",
+      "name": "Execute Sub-workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO presupuestos (phone_number, categoria, monto_limite) VALUES ('{{ $json.phone_number }}', '{{ $json.categoria }}', {{ $json.monto_limite }}) ON CONFLICT (phone_number, categoria) DO UPDATE SET monto_limite = EXCLUDED.monto_limite RETURNING categoria, monto_limite",
+        "options": {}
+      },
+      "id": "11111111-0002-0002-0002-000000000002",
+      "name": "Postgres: Upsert Presupuesto",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        224,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "TyHuDs86VO4FrazA",
+          "name": "Postgres - Personal Assistant"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "output",
+              "value": "=Presupuesto de {{ $json.categoria }} definido en ${{ $json.monto_limite }} por mes.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11111111-0003-0003-0003-000000000003",
+      "name": "Set: Presupuesto Definido",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        448,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Execute Sub-workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Postgres: Upsert Presupuesto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres: Upsert Presupuesto": {
+      "main": [
+        [
+          {
+            "node": "Set: Presupuesto Definido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  }
+}

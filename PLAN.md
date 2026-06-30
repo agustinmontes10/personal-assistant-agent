@@ -32,15 +32,17 @@
 ### Nuevas tools
 - [x] `eliminar_gasto` — eliminar un gasto por ID o el último registrado (`workflows/sub-eliminar-gasto.json`)
 - [x] `editar_gasto` — modificar monto, categoría o descripción de un gasto existente (`workflows/sub-editar-gasto.json`)
-- [ ] `presupuestos` — definir límite mensual por categoría y consultar estado (`workflows/sub-presupuestos.json`)
-  - Requiere nueva tabla `presupuestos` en la DB
-  - El agente avisa al registrar un gasto si se supera o está cerca del límite
+- [x] `presupuestos` — definir límite mensual por categoría y consultar estado
+  - Implementado como dos tools: `definir_presupuesto` (`workflows/sub-definir-presupuesto.json`) y `consultar_presupuestos` (`workflows/sub-consultar-presupuestos.json`)
+  - Tabla `presupuestos` agregada a `sql/schema.sql` (UNIQUE phone_number+categoria para upsert) — **pendiente: correr el SQL en Supabase**
+  - El aviso al superar/acercarse al límite (≥80%) está integrado dentro de `registrar_gasto` (nodo Check Presupuesto + Code), automático tras cada registro
 - [x] `buscar_gastos` — filtrar gastos por categoría, descripción o rango de fechas (`workflows/sub-buscar-gastos.json`)
 - [x] `comparar_periodos` — comparar gasto total o por categoría entre dos períodos (`workflows/sub-comparar-periodos.json`)
 
 ### Mejoras al agente
-- [ ] Soporte para múltiples gastos en un mensaje ("gasté 500 en comida, 1200 en nafta y 300 en café")
+- [x] Soporte para múltiples gastos en un mensaje ("gasté 500 en comida, 1200 en nafta y 300 en café")
   - El agente los parsea todos, muestra resumen conjunto y registra uno por uno tras confirmación
+  - Implementado vía system prompt (regla 11), sin sub-workflow nuevo: reusa `registrar_gasto` por cada gasto
 
 ---
 
